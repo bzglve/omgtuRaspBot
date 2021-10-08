@@ -2,8 +2,8 @@ import json
 
 from requests import get
 
-# page_raw = get('https://rasp.omgtu.ru/api/schedule/group/464')
-page_raw = get('https://rasp.omgtu.ru/api/schedule/group/39')
+page_raw = get('https://rasp.omgtu.ru/api/schedule/group/464')
+# page_raw = get('https://rasp.omgtu.ru/api/schedule/group/39')
 print(page_raw.status_code)
 page = json.loads(page_raw.content.decode('utf-8'))
 
