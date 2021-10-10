@@ -111,7 +111,8 @@ async def choose_group(msg: types.Message):
         group_schedule_raw = get(group_url + str(group_id))
         group_schedule = json.loads(group_schedule_raw.content.decode('utf-8'))
         for weekday in weekdays:
-            weekday_schedule = [lesson for lesson in group_schedule if lesson['dayOfWeekString'] == weekday and not lesson['isBan']]
+            weekday_schedule = [lesson for lesson in group_schedule if
+                                lesson['dayOfWeekString'] == weekday and not lesson['isBan']]
             wd_str = ''
 
             if len(weekday_schedule) > 0:
