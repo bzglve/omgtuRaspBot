@@ -105,7 +105,6 @@ async def choose_group(msg: types.Message):
     group = msg.text[len(msg.text.split()[0]) + 1:]
     with open(variables_file, 'r') as f:
         groups = dict(json.load(f))
-    # await msg.answer(f'Получается группа {group}')
     try:
         group_id = groups[group]
         group_schedule_raw = get(group_url + str(group_id))
@@ -145,7 +144,6 @@ async def choose_group(msg: types.Message):
                 pass
     except KeyError:
         await msg.answer(f'Я хер знает, что это за группа')
-        # difflib.get_close_matches('Hello', words)
         await msg.answer(f'Но похоже на {" или ".join(difflib.get_close_matches(group.upper(), groups))}')
         await msg.answer(f'Найди выше свою группу и введи в точности, как там написано')
         await msg.answer(f'Если выше такой группы нет, тогда пиши @bzglve, он всё починит')
