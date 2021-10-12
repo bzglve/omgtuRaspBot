@@ -15,6 +15,15 @@ auditorium_url = schedule_url + 'auditorium/'
 group_url = schedule_url + 'group/'
 person_url = schedule_url + 'person/'
 
+
+with open(variables_file, 'r') as f:
+    raw = json.load(f)
+    groups = raw['groups']
+    persons = raw['persons']
+    room = raw['rooms']
+    admins = raw['admins']
+
+
 lesson_keys = {
     'auditorium',
     'auditoriumAmount',
@@ -83,11 +92,6 @@ lesson_keys = {
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(bot)
 
-admin_ids = {
-    '389026886': 'bzglve',
-    '700440368': 'rumbleofgunlock'
-}
-
 bot_ban_usernames = {}
 
 weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']
@@ -98,13 +102,11 @@ weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']
 @dp.message_handler(lambda msg: msg.text.split()[0] in commands['info'])
 async def send_info(msg: types.Message):
     await msg.answer(f'Бот написан практически на чистом энтузиазме студентами КЗИ-191 в октябре 2021')
-    await msg.answer(f"По всем вопросам обращаться {' '.join([('@' + admin) for admin in list(admin_ids.values())])}")
+    await msg.answer(f"По всем вопросам обращаться {' '.join([('@' + admin) for admin in list(admins.values())])}")
 
 
 async def choose_group(msg: types.Message):
     group = msg.text[len(msg.text.split()[0]) + 1:]
-    with open(variables_file, 'r') as f:
-        groups = dict(json.load(f))
     try:
         group_id = groups[group]
         group_schedule_raw = get(group_url + str(group_id))
@@ -149,7 +151,7 @@ async def choose_group(msg: types.Message):
         await msg.answer(f'Если выше такой группы нет, тогда пиши @bzglve, он всё починит')
 
 
-@dp.message_handler(commands=['start'], user_id=admin_ids)
+@dp.message_handler(commands=['start'], user_id=admins)
 async def send_welcome(msg: types.Message):
     await msg.answer(f'Приветствую, {msg.from_user.full_name}')
     await msg.answer(f'Чего изволите, хозяин?')
@@ -161,11 +163,10 @@ async def send_welcome(msg: types.Message):
     await msg.answer('Я бот расписания омского политеха')
     await msg.answer('Пока что довольно тупой, но разрабы меня постоянно прокачивают')
     await msg.answer(f"Если есть вопросы по работе, жалобы или предложения по сотрудничеству, то можешь смело писать "
-                     f"писать админу {', '.join([('@' + admin) for admin in list(admin_ids.values())[:1]])}")
+                     f"писать админу {', '.join([('@' + admin) for admin in list(admins.values())[:1]])}")
 
 
 @dp.message_handler(commands=['help'])
-@dp.message_handler(lambda msg: msg.text.split()[0] in commands['help'])
 async def send_help(msg: types.Message):
     for key in commands.keys():
         await msg.answer(f"{' '.join(commands[key]['commands'])}\n"
@@ -180,8 +181,12 @@ async def handle_banned(msg: types.Message):
 
 @dp.message_handler(commands=['group'])
 async def choose_group_help(msg: types.Message):
-    await msg.answer('Напиши пожлуйста номер своей группы в формате "Группа ..."')
-    await msg.answer('Например "Группа БИТ-201"')
+    group = msg.text[len(msg.text.split()[0])+1:]
+    if group:
+        await choose_group(msg)
+    else:
+        await msg.answer('Напиши пожлуйста номер своей группы в формате "Группа ..."')
+        await msg.answer('Например "Группа БИТ-201"')
 
 
 @dp.message_handler(content_types=['text'])
@@ -194,7 +199,7 @@ async def get_text_messages(msg: types.Message):
         await msg.answer(f'Я тебя не понял \n'
                          f'/help выведет список доступных комманд\n'
                          f'Ну либо ещё не умею отвечать на это')
-        await msg.answer(f'Попробуй написать @{list(admin_ids.values())[0]} если возникли трудности')
+        await msg.answer(f'Попробуй написать @{list(admins.values())[0]} если возникли трудности')
 
 
 commands = {
@@ -212,7 +217,7 @@ commands = {
             'group',
             'группа'
         },
-        'action': choose_group,
+        'action': choose_group_help,
         'comment': 'Выбор рабочей группы'
     },
     'info': {
@@ -243,4 +248,7 @@ def main():
 if __name__ == '__main__':
     main()
 
-# TODO дописать дохуя функционала
+# TODO спарсить преподователей
+# TODO спарсить аудитории
+# TODO рефактор
+# TODO БД

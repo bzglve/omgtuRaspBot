@@ -1,18 +1,17 @@
 import json
 import operator
 from difflib import SequenceMatcher
-import re
 
 from requests import get
 
 
-def get_common_group(groups: list):
+def get_common_group(groups_: list):
     substring_counts = {}
 
-    for i in range(0, len(groups)):
-        for j in range(i + 1, len(groups)):
-            string1 = groups[i]
-            string2 = groups[j]
+    for i in range(0, len(groups_)):
+        for j in range(i + 1, len(groups_)):
+            string1 = groups_[i]
+            string2 = groups_[j]
             match = SequenceMatcher(None, string1, string2).find_longest_match(0, len(string1), 0, len(string2))
             matching_substring = string1[match.a:match.a + match.size]
             if matching_substring not in substring_counts:

@@ -35,6 +35,3 @@ for p in page:
         print('#' * 10)
 
 print(groups_candidates)
-
-# TODO Найти поддомены shedule/... для получения по преподам.группам и тп
-# TODO По-человечески парсить
