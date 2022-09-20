@@ -24,6 +24,22 @@ async def set_default_commands(dp):
                 "week",
                 "Получить расписание на текущую неделю",
             ),
+            types.BotCommand(
+                "now",
+                "Текущая пара",
+            ),
+            types.BotCommand(
+                "next",
+                "Следующая пара",
+            ),
+            types.BotCommand(
+                "search_week",
+                "Поиск расписания на неделю по дате",
+            ),
+            types.BotCommand(
+                "search_day",
+                "Поиск расписания на день по дате",
+            ),
             types.BotCommand("cancel", "Отмена"),
         ]
     )
