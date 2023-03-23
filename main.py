@@ -1,6 +1,7 @@
+#!.venv/bin/python
 from aiogram import executor as ex
 
-import handlers
+import handlers  # noqa: F401
 from loader import dp
 from util.commands import set_default_commands
 

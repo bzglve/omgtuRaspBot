@@ -21,6 +21,10 @@ async def set_default_commands(dp):
                 "Получить расписание на сегодня",
             ),
             types.BotCommand(
+                "tomorrow",
+                "Получить расписание на завтра",
+            ),
+            types.BotCommand(
                 "week",
                 "Получить расписание на текущую неделю",
             ),

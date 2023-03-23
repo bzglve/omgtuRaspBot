@@ -1,11 +1,15 @@
 import json
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import requests
 from aiogram import types
-from aiogram.dispatcher import FSMContext
+# from aiogram.dispatcher import FSMContext
+from aiogram_dialog import Dialog, DialogManager, StartMode, Window
+from aiogram_dialog.widgets.kbd import Calendar
+from aiogram_dialog.widgets.text import Const
+
 from database.base import change_group, get_user_group
-from loader import bot, dp
+from loader import bot, dp, registry
 from states.default import BotStates
 from util.helpers import day_text, get_week_dates, lesson_text
 
@@ -42,7 +46,7 @@ async def wait_for_group_handler(msg: types.Message):
 @dp.callback_query_handler(state=BotStates.WAIT_FOR_GROUP)
 async def handle_group_callback(callback: types.CallbackQuery):
     await bot.answer_callback_query(callback.id)
-    change_group(callback.from_user.id, callback.data)
+    change_group(callback.from_user.id, int(callback.data))
     await callback.message.delete()
     await bot.send_message(callback.message.chat.id, "Группа выбрана")
     await dp.current_state(user=callback.from_user.id).reset_state()
@@ -65,7 +69,6 @@ async def now_handler(msg: types.Message):
     result = json.loads(request.text)
 
     current_time = datetime.now()
-    current_time = datetime.strptime("18:21", "%H:%M")
     if lesson := list(
         filter(
             lambda lesson: datetime.strptime(lesson.get("beginLesson"), "%H:%M")
@@ -99,7 +102,6 @@ async def next_handler(msg: types.Message):
     result = json.loads(request.text)
 
     current_time = datetime.now()
-    current_time = datetime.strptime("9:39", "%H:%M")
 
     if current_time < datetime.strptime(result[0].get("beginLesson"), "%H:%M"):
         lesson = [result[0]]
@@ -140,16 +142,40 @@ async def today_handler(msg: types.Message, ymd_date=None):
     ).text == "[]":
         return
     result = json.loads(request.text)
-    with open(
-        f"/home/god/Documents/omgtuRaspBot/{result[0].get('dayOfWeekString')}.json", "w"
-    ) as f:
-        json.dump(result, f, indent=4, ensure_ascii=False)
 
     schedule = (
         f"{ymd_date} ({result[0].get('dayOfWeekString')})\n" if ymd_date else ""
     ) + day_text(result)
 
-    await msg.answer(schedule, parse_mode=types.ParseMode.MARKDOWN)
+    await bot.send_message(
+        chat_id=msg.from_user.id, text=schedule, parse_mode=types.ParseMode.MARKDOWN
+    )
+
+
+@dp.message_handler(commands=["tomorrow"])
+async def tomorrow_handler(msg: types.Message, ymd_date=None):
+    user_group = get_user_group(msg.from_user.id)
+    if user_group is None:
+        await msg.answer("Сначала выберите группу\n(команда /group)")
+        return
+
+    # tomorrow_date = ymd_date or date.today().strftime("%Y.%m.%d")
+    tomorrow_date = ymd_date or (date.today() + timedelta(days=1)).strftime("%Y.%m.%d")
+    if (
+        request := requests.get(
+            f"https://rasp.omgtu.ru/api/schedule/group/{user_group}?start={tomorrow_date}&finish={tomorrow_date}&lng=1"
+        )
+    ).text == "[]":
+        return
+    result = json.loads(request.text)
+
+    schedule = (
+        f"{ymd_date} ({result[0].get('dayOfWeekString')})\n" if ymd_date else ""
+    ) + day_text(result)
+
+    await bot.send_message(
+        chat_id=msg.from_user.id, text=schedule, parse_mode=types.ParseMode.MARKDOWN
+    )
 
 
 @dp.message_handler(commands=["week"])
@@ -166,43 +192,60 @@ async def week_handler(msg: types.Message, ymd_date=None):
         await today_handler(msg, day.strftime("%Y.%m.%d"))
 
 
-@dp.message_handler(commands=["search_day"])
-async def search_day_handler(msg: types.Message, state: FSMContext):
-    # TODO получить день по инлайн-календарю
-    # TODO получение только по дате (без месяца)
-    await msg.answer(
-        'По какой дате будем искать?\n(Введите дату в формате "дата.месяц", год необязательно)'
-    )
-    await BotStates.WAIT_FOR_DATE.set()
-    async with state.proxy() as data:
-        data["date_for"] = "day"
+async def on_date_selected(
+    c: types.CallbackQuery, widget, manager: DialogManager, selected_date: date
+):
+    msg = c.message
+    msg.text = selected_date.strftime("%d.%m")
+    print(msg)
+
+    await wait_for_date_handler(msg)
 
 
-@dp.message_handler(commands=["search_week"])
-async def search_day_handler(msg: types.Message, state: FSMContext):
-    # TODO получить неделю по инлайн-календарю
+calendar = Calendar(id="calendar", on_click=on_date_selected)
+calendar_window = Window(
+    Const(
+        'По какой дате будем искать?\n(Введите дату в формате "дата.месяц" или выберите нужную в календаре)'
+    ),
+    calendar,
+    state=BotStates.WAIT_FOR_DATE,
+)
+dialog = Dialog(calendar_window)
+
+
+@dp.message_handler(commands=["search_day", "search_week"])
+async def search_day_handler(msg: types.Message, dialog_manager: DialogManager):
+    print(msg)
+    # TODO починить состояние при выборе через календарь
+    # TODO сейчас работает чисто на день, а надо и на день и на неделю
     # TODO получение только по дате (без месяца)
-    await msg.answer(
-        'По какой дате будем искать?\n(Введите дату в формате "дата.месяц", год необязательно)'
-    )
     await BotStates.WAIT_FOR_DATE.set()
-    async with state.proxy() as data:
-        data["date_for"] = "week"
+    async with dp.current_state(
+        chat=msg.chat.id, user=msg.from_user.id
+    ).proxy() as data:
+        data["date_for"] = msg.get_command().split("_")[-1]
+
+    registry.register(dialog)
+    await dialog_manager.start(BotStates.WAIT_FOR_DATE, mode=StartMode.RESET_STACK)
 
 
 @dp.message_handler(state=BotStates.WAIT_FOR_DATE)
-async def wait_for_date_handler(msg: types.Message, state: FSMContext):
+async def wait_for_date_handler(msg: types.Message):
     try:
         request_date = datetime.strptime(
             f"{msg.text}.{date.today().year}", "%d.%m.%Y"
         ).strftime("%Y.%m.%d")
         target = ""
-        async with state.proxy() as data:
+        async with dp.current_state(
+            chat=msg.chat.id, user=msg.from_user.id
+        ).proxy() as data:
             target = data.get("date_for")
         match target:
             case "day":
+                print(f"TODAY WITH {request_date}")
                 await today_handler(msg, request_date)
             case "week":
+                print(f"WEEK WITH {request_date}")
                 await week_handler(msg, request_date)
         await dp.current_state(user=msg.from_user.id).reset_state()
     except ValueError:
