@@ -13,6 +13,8 @@ storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 dp.middleware.setup(LoggingMiddleware())
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger("bot")
+logger.setLevel(logging.DEBUG)
 
 registry = DialogRegistry(dp)

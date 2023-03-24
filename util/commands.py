@@ -1,5 +1,8 @@
 from aiogram import types
 
+from handlers.default import setup as default_setup
+from handlers.user import setup as user_setup
+
 
 async def set_default_commands(dp):
     await dp.bot.set_my_commands(
@@ -47,3 +50,8 @@ async def set_default_commands(dp):
             types.BotCommand("cancel", "Отмена"),
         ]
     )
+
+
+def register_handlers(dispatcher):
+    default_setup(dispatcher)
+    user_setup(dispatcher)

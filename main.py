@@ -1,16 +1,17 @@
 #!.venv/bin/python
 from aiogram import executor as ex
 
-import handlers  # noqa: F401
 from loader import dp
-from util.commands import set_default_commands
+from util.commands import set_default_commands, register_handlers
 
 
-async def on_startup(dp):
-    await set_default_commands(dp)
+async def on_startup(dispatcher):
+    await set_default_commands(dispatcher)
+    register_handlers(dispatcher)
 
 
-async def on_shutdown(dp):
+# async def on_shutdown(dispatcher):
+async def on_shutdown():
     pass
 
 

@@ -1,14 +1,13 @@
 from aiogram import types
-from loader import dp
 from aiogram.utils.markdown import link
 
+from loader import dp
 
-@dp.message_handler(commands=["cancel"], state="*")
+
 async def cancel_handler(msg: types.Message):
     await dp.current_state(user=msg.from_user.id).reset_state()
 
 
-@dp.message_handler(commands=["start"])
 async def start_handler(msg: types.Message):
     await msg.answer(
         """Приветствую
@@ -21,7 +20,6 @@ async def start_handler(msg: types.Message):
     )
 
 
-@dp.message_handler(commands=["help"])
 async def help_handler(msg: types.Message):
     text = link("github", "https://github.com/viktory683/omgtuRaspBot")
     await msg.answer("Всё, что вам может понадобится находится в меню команд")

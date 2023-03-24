@@ -11,9 +11,9 @@ def lesson_text(lesson):
     text = ""
     text += f'*{lesson.get("beginLesson")}* *-* *{lesson.get("endLesson")}*'
     text += f'        _{lesson.get("auditorium")}_'
-    if kindofwork := lesson.get("kindOfWork"):
-        kindofwork = "".join(map(lambda word: word[0], kindofwork.upper().split()))
-        text += f"        *{kindofwork}*"
+    if kind_of_work := lesson.get("kindOfWork"):
+        kind_of_work = "".join(map(lambda word: word[0], kind_of_work.upper().split()))
+        text += f"        *{kind_of_work}*"
     if subgroup := lesson.get("subGroup"):
         text += f"        *({subgroup})*"
     if stream := lesson.get("stream"):
