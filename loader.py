@@ -11,10 +11,10 @@ bot = Bot(token=BOT_TOKEN)
 
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
+registry = DialogRegistry(dp)
+
 dp.middleware.setup(LoggingMiddleware())
 
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("bot")
 logger.setLevel(logging.DEBUG)
-
-registry = DialogRegistry(dp)

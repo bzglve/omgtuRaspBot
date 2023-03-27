@@ -17,3 +17,16 @@ def get_user_group(user_id: int):
         with open("database/data.json", "r") as f:
             data = json.load(f)
         return data.get(str(user_id))
+
+
+def load_kind_of_work() -> dict:
+    with open("database/kind_of_work.json") as f:
+        return json.load(f)
+
+
+def add_new_kind_of_work(id, kind_of_work):
+    with open("database/kind_of_work.json") as f:
+        data = json.load(f)
+    data[id] = kind_of_work
+    with open("database/kind_of_work.json", "w") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)

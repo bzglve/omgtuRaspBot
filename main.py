@@ -2,7 +2,7 @@
 from aiogram import executor as ex
 
 from loader import dp
-from util.commands import set_default_commands, register_handlers
+from util.commands import register_handlers, set_default_commands
 
 
 async def on_startup(dispatcher):
@@ -10,8 +10,7 @@ async def on_startup(dispatcher):
     register_handlers(dispatcher)
 
 
-# async def on_shutdown(dispatcher):
-async def on_shutdown():
+async def on_shutdown(dispatcher):
     pass
 
 

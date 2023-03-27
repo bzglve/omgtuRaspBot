@@ -1,6 +1,13 @@
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
 
-class BotStates(StatesGroup):
-    WAIT_FOR_GROUP = State()
-    WAIT_FOR_DATE = State()
+class GroupSelect(StatesGroup):
+    waiting_for_group = State()
+
+
+class DateSelect(StatesGroup):
+    wait_for_day = State()
+
+
+class WeekSelect(StatesGroup):
+    wait_for_week = State()
