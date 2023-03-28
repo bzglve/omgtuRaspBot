@@ -1,5 +1,6 @@
 import json
 from os.path import exists
+from pathlib import Path
 
 
 def change_group(user_id: int, group_id: int):
@@ -30,3 +31,31 @@ def add_new_kind_of_work(id, kind_of_work):
     data[id] = kind_of_work
     with open("database/kind_of_work.json", "w") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
+
+
+def get_events() -> list[dict]:
+    if not Path("database/events.json").is_file():
+        return []
+    with open("database/events.json") as f:
+        return json.load(f)
+
+
+def add_event(event):
+    if Path("database/events.json").is_file():
+        with open("database/events.json") as f:
+
+            data = json.load(f)
+    else:
+        data = []
+    data.append(event)
+    with open("database/events.json", "w") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
+
+
+def remove_event(event):
+    if Path("database/events.json").is_file():
+        with open("database/events.json") as f:
+            data: list = json.load(f)
+        data = list(filter(lambda x: x["id"] != event["id"], data))
+        with open("database/events.json", "w") as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)

@@ -1,11 +1,14 @@
 #!.venv/bin/python
+from aiogram import Dispatcher
 from aiogram import executor as ex
 
-from loader import dp
+from configs.config import poll_interval
+from loader import dp, loop
 from util.commands import register_handlers, set_default_commands
+from util.notification_manager import poll
 
 
-async def on_startup(dispatcher):
+async def on_startup(dispatcher: Dispatcher):
     await set_default_commands(dispatcher)
     register_handlers(dispatcher)
 
@@ -15,6 +18,7 @@ async def on_shutdown(dispatcher):
 
 
 def main():
+    loop.create_task(poll(sleep_for=poll_interval))
     ex.start_polling(dp, on_startup=on_startup, on_shutdown=on_shutdown)
 
 

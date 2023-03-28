@@ -1,3 +1,6 @@
+# every function event_action decorator above will be used as an scheduled notification event
+# DON'T REMOVE AND CAREFULLY EDIT
+
 import json
 from datetime import date, datetime, timedelta
 from urllib.parse import urlencode
@@ -11,9 +14,22 @@ from aiogram_dialog.widgets.text import Const
 
 from database.base import change_group, get_user_group
 from keyboards.inline import get_groups_kb
-from loader import bot, logger, registry
+from loader import bot, registry
+from logger import logger
 from states.default import DateSelect, GroupSelect, WeekSelect
 from util.helpers import day_text, get_week_dates, lesson_text
+
+event_actions = {}
+
+
+def event_action(event_id, description=None):
+    def register(func):
+        event_actions[event_id] = {}
+        event_actions[event_id]["func"] = func
+        event_actions[event_id]["description"] = description
+        return func
+
+    return register
 
 
 async def group_select_handler(msg: types.Message):
@@ -59,12 +75,16 @@ async def handle_group_callback(callback: types.CallbackQuery, state=FSMContext)
     await callback.message.edit_text(f"Выбрана группа {group_name}")
 
 
+@event_action(0)
 async def now_handler(msg: types.Message):
-    user_group = get_user_group(msg.from_user.id)
+    logger.debug(msg)
+    logger.debug("now_handler")
+    user_group = get_user_group(msg.chat.id)
     if user_group is None:
-        await msg.answer(
+        await bot.send_message(
+            msg.chat.id,
             """Сначала выберите группу
-(команда /group)"""
+(команда /group)""",
         )
         return
 
@@ -82,25 +102,32 @@ async def now_handler(msg: types.Message):
 
     if lesson := list(
         filter(
-            lambda lesson: (
-                datetime.strptime(lesson.get("beginLesson"), "%H:%M")
-                <= current_time
-                <= datetime.strptime(lesson.get("endLesson"), "%H:%M")
+            lambda lesson: datetime.strptime(
+                f'{datetime.now().strftime("%Y.%m.%d")} {lesson["beginLesson"]}',
+                "%Y.%m.%d %H:%M",
+            )
+            <= current_time
+            <= datetime.strptime(
+                f'{datetime.now().strftime("%Y.%m.%d")} {lesson["endLesson"]}',
+                "%Y.%m.%d %H:%M",
             ),
             result,
         )
     ):
         schedule = lesson_text(lesson[0])
 
-        await msg.answer(schedule, parse_mode=types.ParseMode.MARKDOWN)
+        await bot.send_message(
+            msg.chat.id, schedule, parse_mode=types.ParseMode.MARKDOWN
+        )
     else:
-        await msg.answer("Сейчас никаких пар не идет")
+        await bot.send_message(msg.chat.id, "Сейчас никаких пар не идет")
 
 
+@event_action(1)
 async def next_handler(msg: types.Message):
-    user_group = get_user_group(msg.from_user.id)
+    user_group = get_user_group(msg.chat.id)
     if user_group is None:
-        await msg.answer("Сначала выберите группу\n(команда /group)")
+        await bot.send_message(msg.chat.id, "Сначала выберите группу\n(команда /group)")
         return
 
     today_date = date.today().strftime("%Y.%m.%d")
@@ -126,9 +153,15 @@ async def next_handler(msg: types.Message):
         lesson = []
         for tmp_lesson in result:
             if (
-                datetime.strptime(tmp_lesson.get("beginLesson"), "%H:%M")
+                datetime.strptime(
+                    f'{datetime.now().strftime("%Y.%m.%d")} {tmp_lesson.get("beginLesson")}',
+                    "%Y.%m.%d %H:%M",
+                )
                 <= current_time
-                <= datetime.strptime(tmp_lesson.get("endLesson"), "%H:%M")
+                <= datetime.strptime(
+                    f'{datetime.now().strftime("%Y.%m.%d")} {tmp_lesson.get("endLesson")}',
+                    "%Y.%m.%d %H:%M",
+                )
             ):
                 current_lesson = True
                 continue
@@ -138,12 +171,14 @@ async def next_handler(msg: types.Message):
     if lesson:
         schedule = lesson_text(lesson[0])
 
-        await msg.answer(schedule, parse_mode=types.ParseMode.MARKDOWN)
+        await bot.send_message(msg.chat.id, schedule, parse_mode=types.ParseMode.MARKDOWN)
     else:
-        await msg.answer("Сегодня больше нет пар")
+        await bot.send_message(msg.chat.id, "Сегодня больше нет пар")
 
 
+@event_action(2)
 async def today_handler(msg: types.Message, ymd_date=None):
+    # print(msg)
     user_group = get_user_group(msg.chat.id)
     if user_group is None:
         await msg.answer(
@@ -172,8 +207,9 @@ async def today_handler(msg: types.Message, ymd_date=None):
     )
 
 
+@event_action(3)
 async def tomorrow_handler(msg: types.Message, ymd_date=None):
-    user_group = get_user_group(msg.from_user.id)
+    user_group = get_user_group(msg.chat.id)
     if user_group is None:
         await msg.answer(
             """Сначала выберите группу
@@ -200,6 +236,7 @@ async def tomorrow_handler(msg: types.Message, ymd_date=None):
     )
 
 
+@event_action(4)
 async def week_handler(msg: types.Message, ymd_date=None):
     user_group = get_user_group(msg.chat.id)
     if user_group is None:
@@ -261,15 +298,14 @@ week_dialog = Dialog(week_window)
 registry.register(week_dialog)
 
 
-# @dp.message_handler(commands=["search_day"])
 async def search_day_handler(msg: types.Message, dialog_manager: DialogManager):
     await dialog_manager.start(DateSelect.wait_for_day, mode=StartMode.RESET_STACK)
 
 
-# @dp.message_handler(commands=["search_week"])
 async def search_week_handler(msg: types.Message, dialog_manager: DialogManager):
     await dialog_manager.start(WeekSelect.wait_for_week, mode=StartMode.RESET_STACK)
 
 
 # TODO отправление дня/недели по заданному расписанию (задать день, время, периодичность)
+# TODO вынести всё общение с апи в отдельный модуль
 # TODO json -> sqlite.db

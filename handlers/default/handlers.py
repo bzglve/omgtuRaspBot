@@ -2,6 +2,7 @@ from aiogram import types
 from aiogram.utils.markdown import link
 
 from loader import dp
+from logger import logger
 
 
 async def cancel_handler(msg: types.Message):
@@ -9,6 +10,7 @@ async def cancel_handler(msg: types.Message):
 
 
 async def start_handler(msg: types.Message):
+    logger.info(f"New user msg: {msg}")
     await msg.answer(
         """Приветствую
 Я бот с расписанием Омского политеха (ОмГТУ)
