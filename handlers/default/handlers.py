@@ -1,5 +1,5 @@
 from aiogram import types
-from aiogram.utils.markdown import link
+from aiogram.utils.markdown import code
 
 from loader import dp
 from logger import logger
@@ -22,7 +22,11 @@ async def start_handler(msg: types.Message):
     )
 
 
-async def help_handler(msg: types.Message):
-    text = link("github", "https://github.com/viktory683/omgtuRaspBot")
-    await msg.answer("Всё, что вам может понадобится находится в меню команд")
-    await msg.answer(text, parse_mode=types.ParseMode.MARKDOWN)
+async def text_handler(msg: types.Message):
+    await msg.answer(
+        f"""Я вас не совсем понял
+Если вы не знаете как пользоваться ботом, то обратите внимание на кнопку {code('Меню')} сразу под этим сообщением
+Либо посмотрите справку по команде /help
+        """,
+        parse_mode=types.ParseMode.MARKDOWN,
+    )
