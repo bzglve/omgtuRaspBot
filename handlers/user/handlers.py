@@ -116,10 +116,11 @@ async def now_handler(msg: types.Message):
     try:
         schedule = get_day_schedule(group_id, today_date)
     except ValueError:
-        await msg.answer("Сегодня нет пар")
+        await bot.send_message(msg.chat.id, "Сегодня нет пар")
         return
     except Exception:
-        await msg.answer(
+        await bot.send_message(
+            msg.chat.id,
             f"""Возникла непредвиденная ошибка
 Попробуйте ещё раз или напишите {link('автору', 'https://t.me/bzglve')} об этой ошибке
         """,
@@ -159,7 +160,7 @@ async def next_handler(msg: types.Message):
         await bot.send_message(
             msg.chat.id,
             """Сначала выберите группу
-(команда /group)"""
+(команда /group)""",
         )
         return
 
@@ -167,10 +168,11 @@ async def next_handler(msg: types.Message):
     try:
         schedule = get_day_schedule(group_id, today_date)
     except ValueError:
-        await msg.answer("Сегодня нет пар")
+        await bot.send_message(msg.chat.id, "Сегодня нет пар")
         return
     except Exception:
-        await msg.answer(
+        await bot.send_message(
+            msg.chat.id,
             f"""Возникла непредвиденная ошибка
 Попробуйте ещё раз или напишите {link('автору', 'https://t.me/bzglve')} об этой ошибке
         """,
@@ -207,7 +209,9 @@ async def next_handler(msg: types.Message):
     if lesson:
         schedule_text = lesson_text(lesson[0])
 
-        await bot.send_message(msg.chat.id, schedule_text, parse_mode=types.ParseMode.MARKDOWN)
+        await bot.send_message(
+            msg.chat.id, schedule_text, parse_mode=types.ParseMode.MARKDOWN
+        )
     else:
         await bot.send_message(msg.chat.id, "Сегодня больше нет пар")
 
@@ -216,12 +220,14 @@ async def next_handler(msg: types.Message):
 async def today_handler(
     msg: types.Message, requested_date: date = None, schedule: list[dict] = None
 ):
+    logger.debug("today_handler")
     no_schedule = False
     if not schedule:
         if not (group_id := get_user_group(msg.chat.id)):
-            await msg.answer(
+            await bot.send_message(
+                msg.chat.id,
                 """Сначала выберите группу
-(команда) /group"""
+(команда) /group""",
             )
             return
 
@@ -232,7 +238,8 @@ async def today_handler(
         except ValueError:
             no_schedule = True
         except Exception:
-            await msg.answer(
+            await bot.send_message(
+                msg.chat.id,
                 f"""Возникла непредвиденная ошибка
 Попробуйте ещё раз или напишите {link('автору', 'https://t.me/bzglve')} об этой ошибке
         """,
@@ -263,11 +270,13 @@ async def tomorrow_handler(msg: types.Message, ymd_date=None):
     await today_handler(msg, tomorrow_date)
 
 
+@event_action(4)
 async def week_handler(msg: types.Message, ymd_date: date = None):
     if not (group_id := get_user_group(msg.chat.id)):
-        await msg.answer(
+        await bot.send_message(
+            msg.chat.id,
             """Сначала выберите группу
-(команда /group)"""
+(команда /group)""",
         )
         return
 
@@ -277,7 +286,7 @@ async def week_handler(msg: types.Message, ymd_date: date = None):
     try:
         schedule = get_week_schedule(group_id, week[0], week[-1])
     except ValueError:
-        await msg.answer("На этой неделе не найдено пар")
+        await bot.send_message(msg.chat.id, "На этой неделе не найдено пар")
         return
 
     for day in schedule:
@@ -337,6 +346,6 @@ async def search_week_handler(msg: types.Message, dialog_manager: DialogManager)
     await dialog_manager.start(WeekSelect.wait_for_week, mode=StartMode.RESET_STACK)
 
 
-# TODO 
+# TODO
 # [ ] отправление дня/недели по заданному расписанию (задать день, время, периодичность)
 # [ ] json -> sqlite.db

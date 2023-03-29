@@ -2,7 +2,7 @@
 from aiogram import Dispatcher
 from aiogram import executor as ex
 
-from configs.config import poll_interval
+from config.config import poll_interval
 from loader import dp, loop
 from util.commands import register_handlers, set_default_commands
 from util.notification_manager import poll

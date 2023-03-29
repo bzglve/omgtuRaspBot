@@ -58,5 +58,5 @@ def setup(chat_id: int, start_time: int, interval: int, action_id: int):
         add_event(event)
 
 
-def delete():
-    pass
+def delete(event_id):
+    remove_event(event_id)

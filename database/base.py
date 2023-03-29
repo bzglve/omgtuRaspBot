@@ -34,28 +34,28 @@ def add_new_kind_of_work(id, kind_of_work):
 
 
 def get_events() -> list[dict]:
-    if not Path("database/events.json").is_file():
+    if not Path("data/events.json").is_file():
         return []
-    with open("database/events.json") as f:
+    with open("data/events.json") as f:
         return json.load(f)
 
 
 def add_event(event):
-    if Path("database/events.json").is_file():
-        with open("database/events.json") as f:
+    if Path("data/events.json").is_file():
+        with open("data/events.json") as f:
 
             data = json.load(f)
     else:
         data = []
     data.append(event)
-    with open("database/events.json", "w") as f:
+    with open("data/events.json", "w") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
 
 
-def remove_event(event):
-    if Path("database/events.json").is_file():
-        with open("database/events.json") as f:
+def remove_event(event_id):
+    if Path("data/events.json").is_file():
+        with open("data/events.json") as f:
             data: list = json.load(f)
-        data = list(filter(lambda x: x["id"] != event["id"], data))
-        with open("database/events.json", "w") as f:
+        data = list(filter(lambda x: x["id"] != event_id, data))
+        with open("data/events.json", "w") as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
