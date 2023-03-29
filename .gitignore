@@ -132,4 +132,6 @@ dmypy.json
 .vscode/
 .idea/
 
-database/*.json
+data/*.json
+data/.db
+test.json
