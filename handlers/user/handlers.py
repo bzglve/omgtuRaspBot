@@ -6,8 +6,9 @@ from aiogram.utils.markdown import link
 from aiogram_dialog import Dialog, DialogManager, StartMode, Window
 from aiogram_dialog.widgets.kbd import Calendar
 from aiogram_dialog.widgets.text import Const
+import sqlalchemy
 
-from database.base import change_group, get_user_group
+from database.base import create_user, get_user, update_user
 from keyboards.inline import get_groups_kb
 from loader import bot, logger, registry
 from states.default import DateSelect, GroupSelect, WeekSelect
@@ -45,7 +46,10 @@ async def wait_for_group_handler(msg: types.Message, state: FSMContext):
     # check if query is already found
     if len(groups) == 1:
         group_id = groups[0]["id"]
-        change_group(msg.chat.id, group_id)
+        try:
+            await create_user(msg.chat.id, int(group_id))
+        except sqlalchemy.exc.IntegrityError:
+            await update_user(msg.chat.id, int(group_id))
         await state.finish()
         await state.reset_state()
         await msg.answer(f"Выбрана группа {groups[0]['label']}")
@@ -69,7 +73,10 @@ async def wait_for_group_handler(msg: types.Message, state: FSMContext):
 
 async def handle_group_callback(callback: types.CallbackQuery, state=FSMContext):
     group_id = int(callback.data)
-    change_group(callback.message.chat.id, group_id)
+    try:
+        await create_user(callback.message.chat.id, group_id)
+    except sqlalchemy.exc.IntegrityError:
+        await update_user(callback.message.chat.id, group_id)
 
     await callback.answer()
 
@@ -88,7 +95,7 @@ async def handle_group_callback(callback: types.CallbackQuery, state=FSMContext)
 
 
 async def now_handler(msg: types.Message):
-    if not (group_id := get_user_group(msg.chat.id)):
+    if not (group_id := (await get_user(msg.chat.id)).group_id):
         await msg.answer(
             """Сначала выберите группу
 (команда /group)"""
@@ -135,7 +142,7 @@ async def now_handler(msg: types.Message):
 
 
 async def next_handler(msg: types.Message):
-    if not (group_id := get_user_group(msg.chat.id)):
+    if not (group_id := (await get_user(msg.chat.id)).group_id):
         await msg.answer(
             """Сначала выберите группу
 (команда /group)"""
@@ -196,7 +203,7 @@ async def today_handler(
 ):
     no_schedule = False
     if not schedule:
-        if not (group_id := get_user_group(msg.chat.id)):
+        if not (group_id := (await get_user(msg.chat.id)).group_id):
             await msg.answer(
                 """Сначала выберите группу
 (команда) /group"""
@@ -241,7 +248,7 @@ async def tomorrow_handler(msg: types.Message, ymd_date=None):
 
 
 async def week_handler(msg: types.Message, ymd_date: date = None):
-    group_id = get_user_group(msg.chat.id)
+    group_id = (await get_user(msg.chat.id)).group_id
     if group_id is None:
         await msg.answer(
             """Сначала выберите группу
