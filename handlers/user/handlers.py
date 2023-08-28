@@ -10,13 +10,12 @@ import sqlalchemy
 
 from database.base import create_user, get_user, update_user
 from keyboards.inline import get_groups_kb
-from loader import bot, registry
+from loader import bot, registry, dp
 from logger import logger
 from states.default import DateSelect, GroupSelect, WeekSelect
 from util.api import get_day_schedule, get_groups, get_week_schedule
 from util.helpers import day_text, get_week_dates, lesson_text
-
-locale.setlocale(locale.LC_ALL, "ru_RU.UTF-8")
+from database.base import create_event, Event
 
 locale.setlocale(locale.LC_ALL, "ru_RU.UTF-8")
 
@@ -63,7 +62,7 @@ async def wait_for_group_handler(msg: types.Message, state: FSMContext):
         group_id = groups[0]["id"]
         try:
             await create_user(msg.chat.id, int(group_id))
-        except sqlalchemy.exc.IntegrityError:
+        except sqlalchemy.exc.IntegrityError: # type: ignore
             await update_user(msg.chat.id, int(group_id))
         await state.finish()
         await state.reset_state()
@@ -90,14 +89,14 @@ async def handle_group_callback(callback: types.CallbackQuery, state=FSMContext)
     group_id = int(callback.data)
     try:
         await create_user(callback.message.chat.id, group_id)
-    except sqlalchemy.exc.IntegrityError:
+    except sqlalchemy.exc.IntegrityError: # type: ignore
         await update_user(callback.message.chat.id, group_id)
 
     await callback.answer()
 
-    event = await state.get_data()
-    await state.finish()
-    await state.reset_state()
+    event = await state.get_data() # type: ignore
+    await state.finish() # type: ignore
+    await state.reset_state() # type: ignore
 
     group_name = list(
         filter(lambda group: group["id"] == group_id, event["groups_list"])
@@ -109,9 +108,37 @@ async def handle_group_callback(callback: types.CallbackQuery, state=FSMContext)
 ################
 
 
-@event_action(0)
+@dp.message_handler(commands=["new"])
+async def new_notification_handler(msg: types.Message):
+    if not (group_id := (await get_user(msg.chat.id)).group_id): # type: ignore
+        await bot.send_message(
+            msg.chat.id,
+            """Сначала выберите группу
+(команда /group)""",
+        )
+        return
+
+    kb = types.InlineKeyboardMarkup().add(
+        *map(
+            lambda event_id_vals: types.InlineKeyboardButton(
+                event_id_vals[1].get("description") or "FUCK",
+                callback_data=f"NEW_EVENT?func_id={event_id_vals[0]}",
+            ),
+            event_actions.items(),
+        )
+    )
+    print(kb)
+    await msg.answer("Выбери функцию", reply_markup=kb)
+
+
+@dp.callback_query_handler(lambda c: c.data.startswith("NEW_EVENT"))
+async def new_event_callback(callback: types.CallbackQuery):
+    await create_event(Event())
+
+
+@event_action(0, "текущая пара")
 async def now_handler(msg: types.Message):
-    if not (group_id := (await get_user(msg.chat.id)).group_id):
+    if not (group_id := (await get_user(msg.chat.id)).group_id): # type: ignore
         await bot.send_message(
             msg.chat.id,
             """Сначала выберите группу
@@ -121,7 +148,7 @@ async def now_handler(msg: types.Message):
 
     today_date = date.today()
     try:
-        schedule = get_day_schedule(group_id, today_date)
+        schedule = get_day_schedule(group_id, today_date) # type: ignore
     except ValueError:
         await bot.send_message(msg.chat.id, "Сегодня нет пар")
         return
@@ -161,7 +188,7 @@ async def now_handler(msg: types.Message):
         await bot.send_message(msg.chat.id, "Сейчас никаких пар не идет")
 
 
-@event_action(1)
+@event_action(1, "следующая пара")
 async def next_handler(msg: types.Message):
     if not (group_id := (await get_user(msg.chat.id)).group_id):
         await bot.send_message(
@@ -223,11 +250,10 @@ async def next_handler(msg: types.Message):
         await bot.send_message(msg.chat.id, "Сегодня больше нет пар")
 
 
-@event_action(2)
+@event_action(2, "расписание на сегодня")
 async def today_handler(
     msg: types.Message, requested_date: date = None, schedule: list[dict] = None
 ):
-    logger.debug("today_handler")
     no_schedule = False
     if not schedule:
         if not (group_id := (await get_user(msg.chat.id)).group_id):
@@ -244,7 +270,7 @@ async def today_handler(
             schedule = get_day_schedule(group_id, d)
         except ValueError:
             no_schedule = True
-        except Exception:
+        except Exception as e:
             await bot.send_message(
                 msg.chat.id,
                 f"""Возникла непредвиденная ошибка
@@ -252,12 +278,14 @@ async def today_handler(
         """,
                 parse_mode=types.ParseMode.MARKDOWN,
             )
+            logger.exception(e)
             return
     else:
         d = datetime.strptime(schedule[0].get("date"), "%Y.%m.%d")
 
     text_format = """
-{date} ({short_date})
+📅 {date} ({short_date})
+
 {text}
     """
 
@@ -271,13 +299,13 @@ async def today_handler(
     await bot.send_message(msg.chat.id, text, types.ParseMode.MARKDOWN)
 
 
-@event_action(3)
+@event_action(3, "расписание на завтра")
 async def tomorrow_handler(msg: types.Message, ymd_date=None):
     tomorrow_date = ymd_date or (date.today() + timedelta(days=1))
     await today_handler(msg, tomorrow_date)
 
 
-@event_action(4)
+@event_action(4, "расписание на неделю")
 async def week_handler(msg: types.Message, ymd_date: date = None):
     if not (group_id := (await get_user(msg.chat.id)).group_id):
         await bot.send_message(
@@ -353,6 +381,16 @@ async def search_week_handler(msg: types.Message, dialog_manager: DialogManager)
     await dialog_manager.start(WeekSelect.wait_for_week, mode=StartMode.RESET_STACK)
 
 
+async def easter_egg_handler(msg: types.Message):
+    sticker_ids = [
+        "CAACAgIAAxkBAAEIYapkJV7hnI3RqXaOoJdQ0d_X6Aot1AAC7A4AAjVboUj_dVCk0SiM8i8E",
+        "CAACAgIAAxkBAAEIYatkJV7h9ynnNdMyLt-qMVqF3sPDuQACuA0AAhQToEi3hBIO7vCozS8E",
+        "CAACAgIAAxkBAAEIYaxkJV7h1_pXZIH5b3Io8I6WM4fmWgACpw8AAmdQmEjWpQV8MGuDWy8E",
+    ]
+
+    for sticker_id in sticker_ids:
+        await msg.answer_sticker(sticker_id)
+
+
 # TODO
 # [ ] отправление дня/недели по заданному расписанию (задать день, время, периодичность)
-# [ ] json -> sqlite.db

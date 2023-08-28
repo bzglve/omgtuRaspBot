@@ -86,6 +86,6 @@ async def info_handler(msg: types.Message):
 def register_handlers(dispatcher: Dispatcher):
     default_setup(dispatcher)
     user_setup(dispatcher)
-    dispatcher.register_message_handler(help_handler, commands=["help"])
-    dispatcher.register_message_handler(info_handler, commands=["info"])
+    dispatcher.register_message_handler(help_handler, commands=["help"], state="*")
+    dispatcher.register_message_handler(info_handler, commands=["info"], state="*")
     dispatcher.register_message_handler(text_handler)

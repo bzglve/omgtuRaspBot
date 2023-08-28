@@ -18,7 +18,7 @@ async def on_shutdown(dispatcher):
 
 
 def main():
-    loop.create_task(poll(sleep_for=poll_interval))
+    loop.create_task(poll(sleep_time=poll_interval))
     ex.start_polling(dp, on_startup=on_startup, on_shutdown=on_shutdown)
 
 

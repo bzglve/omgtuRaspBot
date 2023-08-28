@@ -10,3 +10,8 @@ try:
     poll_interval = env.int("POLL_INTERVAL")
 except EnvError:
     poll_interval = 0.001
+
+try:
+    AUTHOR = env.str("AUTHOR")
+except EnvError:
+    AUTHOR = None

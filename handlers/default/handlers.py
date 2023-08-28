@@ -7,6 +7,9 @@ from logger import logger
 
 async def cancel_handler(msg: types.Message):
     await dp.current_state(user=msg.from_user.id).reset_state()
+    await msg.answer("""
+    Состояние сброшено
+Если возникнут ошибки, обратитесь к автору""")
 
 
 async def start_handler(msg: types.Message):

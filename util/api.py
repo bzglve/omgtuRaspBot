@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 import requests
 
 
-def get_groups(query: str = None) -> list[dict]:
+def get_groups(query: str = "") -> list[dict]:
     """Fetches a groups from the OmGTU API.
 
     Args:
