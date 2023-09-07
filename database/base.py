@@ -4,6 +4,7 @@ from typing import Dict
 from sqlalchemy import delete, insert, select, update
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import declarative_base, Mapped, mapped_column
+from sqlalchemy.orm.decl_api import DeclarativeMeta
 
 from config.config import SQLITE_DB_PATH, LOGLEVEL
 import logging
@@ -22,7 +23,7 @@ def add_new_kind_of_work(id: str, kind_of_work: str):
         json.dump(data, f, indent=4, ensure_ascii=False)
 
 
-Base = declarative_base()
+Base: DeclarativeMeta = declarative_base()
 
 DATABASE_URL = f"sqlite+aiosqlite:///{SQLITE_DB_PATH}"
 
@@ -67,3 +68,8 @@ async def delete_user(chat_id: int):
     async with async_session() as session:
         await session.execute(delete(User).where(User.chat_id == chat_id))
         await session.commit()
+
+
+async def create_all():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)

@@ -3,9 +3,11 @@ from aiogram import executor as ex
 
 from loader import dp
 from util.commands import register_handlers, set_default_commands
+from database import base
 
 
 async def on_startup(dispatcher):
+    await base.create_all()
     await set_default_commands(dispatcher)
     register_handlers(dispatcher)
 
