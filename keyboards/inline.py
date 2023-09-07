@@ -1,7 +1,8 @@
+from typing import Dict, List
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
-def get_groups_kb(groups: list[dict[str:str]]):
+def get_groups_kb(groups: List[Dict[str, str]]):
     """
     Function that returns a InlineKeyboardMarkup with all the groups
 
@@ -13,12 +14,5 @@ def get_groups_kb(groups: list[dict[str:str]]):
 
     """
     return InlineKeyboardMarkup().add(
-        *list(
-            map(
-                lambda group: InlineKeyboardButton(
-                    group["name"], callback_data=group["id"]
-                ),
-                groups,
-            )
-        )
+        *list(map(lambda group: InlineKeyboardButton(group["name"], callback_data=group["id"]), groups))  # type: ignore
     )

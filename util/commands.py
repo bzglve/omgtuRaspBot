@@ -6,50 +6,17 @@ from handlers.default.handlers import text_handler
 from handlers.user import setup as user_setup
 
 bot_commands = [
-    types.BotCommand(
-        "start",
-        "Запустить бота",
-    ),
-    types.BotCommand(
-        "help",
-        "Справка",
-    ),
-    types.BotCommand(
-        "group",
-        "Выбрать группу",
-    ),
-    types.BotCommand(
-        "today",
-        "Получить расписание на сегодня",
-    ),
-    types.BotCommand(
-        "tomorrow",
-        "Получить расписание на завтра",
-    ),
-    types.BotCommand(
-        "week",
-        "Получить расписание на текущую неделю",
-    ),
-    types.BotCommand(
-        "now",
-        "Текущая пара",
-    ),
-    types.BotCommand(
-        "next",
-        "Следующая пара",
-    ),
-    types.BotCommand(
-        "search_day",
-        "Поиск расписания на день по дате",
-    ),
-    types.BotCommand(
-        "search_week",
-        "Поиск расписания на неделю по дате",
-    ),
-    types.BotCommand(
-        "info",
-        "Информация для информирования интересующихся",
-    ),
+    types.BotCommand("start", "Запустить бота"),
+    types.BotCommand("help", "Справка"),
+    types.BotCommand("group", "Выбрать группу"),
+    types.BotCommand("today", "Получить расписание на сегодня"),
+    types.BotCommand("tomorrow", "Получить расписание на завтра"),
+    types.BotCommand("week", "Получить расписание на текущую неделю"),
+    types.BotCommand("now", "Текущая пара"),
+    types.BotCommand("next", "Следующая пара"),
+    types.BotCommand("search_day", "Поиск расписания на день по дате"),
+    types.BotCommand("search_week", "Поиск расписания на неделю по дате"),
+    types.BotCommand("info", "Информация для информирования интересующихся"),
     types.BotCommand("cancel", "Отмена (сброс состояния бота до начального)"),
 ]
 
@@ -59,17 +26,8 @@ async def set_default_commands(dp):
 
 
 async def help_handler(msg: types.Message):
-    await msg.answer(
-        "\n".join(
-            map(
-                lambda command: f"/{command['command']}: {command['description']}",
-                bot_commands,
-            )
-        )
-    )
-    await msg.answer(
-        "Всё, что вам может понадобится находится в меню слева от строки ввода"
-    )
+    await msg.answer("\n".join(map(lambda command: f"/{command['command']}: {command['description']}", bot_commands)))
+    await msg.answer("Всё, что вам может понадобится находится в меню слева от строки ввода")
 
 
 async def info_handler(msg: types.Message):

@@ -1,5 +1,6 @@
 import locale
 from datetime import date, datetime, timedelta
+from typing import Optional
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.utils.markdown import link
@@ -30,15 +31,13 @@ async def wait_for_group_handler(msg: types.Message, state: FSMContext):
     except ValueError:
         await msg.answer(
             f"""Я не смог найти группу по запросу \"{msg.text}\"
-Попробуйте ещё раз
-        """
+Попробуйте ещё раз"""
         )
         return
     except Exception:
         await msg.answer(
             f"""Возникла непредвиденная ошибка
-Попробуйте ещё раз или напишите {link('автору', 'https://t.me/bzglve')} об этой ошибке
-        """,
+Попробуйте ещё раз или напишите {link('автору', 'https://t.me/bzglve')} об этой ошибке""",
             parse_mode=types.ParseMode.MARKDOWN,
         )
         return
@@ -48,7 +47,7 @@ async def wait_for_group_handler(msg: types.Message, state: FSMContext):
         group_id = groups[0]["id"]
         try:
             await create_user(msg.chat.id, int(group_id))
-        except sqlalchemy.exc.IntegrityError:
+        except sqlalchemy.exc.IntegrityError:  # type: ignore
             await update_user(msg.chat.id, int(group_id))
         await state.finish()
         await state.reset_state()
@@ -63,7 +62,7 @@ async def wait_for_group_handler(msg: types.Message, state: FSMContext):
         reply_markup=get_groups_kb(
             list(
                 map(
-                    lambda group: {"name": group.get("label"), "id": group.get("id")},
+                    lambda group: {"name": group["label"], "id": group["id"]},
                     groups,
                 )
             )
@@ -71,24 +70,23 @@ async def wait_for_group_handler(msg: types.Message, state: FSMContext):
     )
 
 
-async def handle_group_callback(callback: types.CallbackQuery, state=FSMContext):
+async def handle_group_callback(callback: types.CallbackQuery, state: Optional[FSMContext]):
     group_id = int(callback.data)
     try:
         await create_user(callback.message.chat.id, group_id)
-    except sqlalchemy.exc.IntegrityError:
+    except sqlalchemy.exc.IntegrityError:  # type: ignore
         await update_user(callback.message.chat.id, group_id)
 
     await callback.answer()
 
-    event = await state.get_data()
-    await state.finish()
-    await state.reset_state()
+    if state:
+        event = await state.get_data()
+        await state.finish()
+        await state.reset_state()
 
-    group_name = list(
-        filter(lambda group: group["id"] == group_id, event["groups_list"])
-    )[0].get("label")
+        group_name = list(filter(lambda group: group["id"] == group_id, event["groups_list"]))[0].get("label")
 
-    await callback.message.edit_text(f"Выбрана группа {group_name}")
+        await callback.message.edit_text(f"Выбрана группа {group_name}")
 
 
 ################
@@ -127,9 +125,7 @@ async def now_handler(msg: types.Message):
                     "%Y.%m.%d %H:%M",
                 )
                 <= current_time
-                <= datetime.strptime(
-                    f'{lesson.get("date")} {lesson.get("endLesson")}', "%Y.%m.%d %H:%M"
-                )
+                <= datetime.strptime(f'{lesson.get("date")} {lesson.get("endLesson")}', "%Y.%m.%d %H:%M")
             ),
             schedule,
         )
@@ -199,10 +195,12 @@ async def next_handler(msg: types.Message):
 
 
 async def today_handler(
-    msg: types.Message, requested_date: date = None, schedule: list[dict] = None
+    msg: types.Message,
+    requested_date: Optional[date] = None,
+    schedule: Optional[list[dict]] = None,
 ):
     no_schedule = False
-    if not schedule:
+    if schedule is None or len(schedule) == 0:
         if not (group_id := (await get_user(msg.chat.id)).group_id):
             await msg.answer(
                 """Сначала выберите группу
@@ -225,7 +223,7 @@ async def today_handler(
             )
             return
     else:
-        d = datetime.strptime(schedule[0].get("date"), "%Y.%m.%d")
+        d = datetime.strptime(schedule[0]["date"], "%Y.%m.%d")
 
     text_format = """
 {date} ({short_date})
@@ -247,7 +245,7 @@ async def tomorrow_handler(msg: types.Message, ymd_date=None):
     await today_handler(msg, tomorrow_date)
 
 
-async def week_handler(msg: types.Message, ymd_date: date = None):
+async def week_handler(msg: types.Message, ymd_date: Optional[date] = None):
     group_id = (await get_user(msg.chat.id)).group_id
     if group_id is None:
         await msg.answer(
@@ -269,9 +267,7 @@ async def week_handler(msg: types.Message, ymd_date: date = None):
         await today_handler(msg, schedule=day)
 
 
-async def on_day_selected(
-    c: types.CallbackQuery, widget, manager: DialogManager, selected_date: date
-):
+async def on_day_selected(c: types.CallbackQuery, widget, manager: DialogManager, selected_date: date):
     logger.debug("on_date_selected")
     await c.answer()
     await c.message.answer(str(selected_date))
@@ -283,9 +279,7 @@ async def on_day_selected(
     await today_handler(c.message, selected_date)
 
 
-async def on_week_selected(
-    c: types.CallbackQuery, widget, manager: DialogManager, selected_date: date
-):
+async def on_week_selected(c: types.CallbackQuery, widget, manager: DialogManager, selected_date: date):
     logger.debug("on_date_selected")
     await c.answer()
     await c.message.answer(str(selected_date))
@@ -299,7 +293,7 @@ async def on_week_selected(
 
 day_window = Window(
     Const("Выберите дату из календаря"),
-    Calendar(id="calendar", on_click=on_day_selected),
+    Calendar(id="calendar", on_click=on_day_selected),  # type: ignore
     state=DateSelect.wait_for_day,
 )
 day_dialog = Dialog(day_window)
@@ -307,7 +301,7 @@ registry.register(day_dialog)
 
 week_window = Window(
     Const("Выберите дату из календаря"),
-    Calendar(id="calendar", on_click=on_week_selected),
+    Calendar(id="calendar", on_click=on_week_selected),  # type: ignore
     state=WeekSelect.wait_for_week,
 )
 week_dialog = Dialog(week_window)
@@ -322,6 +316,6 @@ async def search_week_handler(msg: types.Message, dialog_manager: DialogManager)
     await dialog_manager.start(WeekSelect.wait_for_week, mode=StartMode.RESET_STACK)
 
 
-# TODO 
+# TODO
 # [ ] отправление дня/недели по заданному расписанию (задать день, время, периодичность)
 # [ ] json -> sqlite.db

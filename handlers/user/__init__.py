@@ -17,12 +17,8 @@ from states.default import GroupSelect
 
 def setup(dispatcher: Dispatcher):
     dispatcher.register_message_handler(group_select_handler, commands=["group"])
-    dispatcher.register_message_handler(
-        wait_for_group_handler, state=GroupSelect.waiting_for_group
-    )
-    dispatcher.register_callback_query_handler(
-        handle_group_callback, state=GroupSelect.waiting_for_group
-    )
+    dispatcher.register_message_handler(wait_for_group_handler, state=GroupSelect.waiting_for_group)
+    dispatcher.register_callback_query_handler(handle_group_callback, state=GroupSelect.waiting_for_group)
     dispatcher.register_message_handler(now_handler, commands=["now"])
     dispatcher.register_message_handler(next_handler, commands=["next"])
     dispatcher.register_message_handler(today_handler, commands=["today"])

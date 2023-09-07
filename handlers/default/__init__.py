@@ -1,6 +1,6 @@
 from aiogram import Dispatcher
 
-from handlers.default.handlers import start_handler, cancel_handler, text_handler
+from handlers.default.handlers import start_handler, cancel_handler
 
 
 def setup(dispatcher: Dispatcher):

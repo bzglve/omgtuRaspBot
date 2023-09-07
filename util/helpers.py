@@ -29,18 +29,14 @@ def lesson_text(lesson):
         "stream": lesson.get("stream"),
         "kind_of_work_oid": lesson.get("kindOfWorkOid"),
     }
-    text_vars["group_var"] = (
-        text_vars.get("group") or text_vars.get("sub_group") or text_vars.get("stream")
-    )
+    text_vars["group_var"] = text_vars.get("group") or text_vars.get("sub_group") or text_vars.get("stream")
 
     kind_of_work_short_vars = load_kind_of_work()
     if str(text_vars["kind_of_work_oid"]) not in kind_of_work_short_vars:
         add_new_kind_of_work(text_vars["kind_of_work_oid"], text_vars["kind_of_work"])
         kind_of_work_short_vars = load_kind_of_work()
 
-    text_vars["kind_of_work_short"] = kind_of_work_short_vars.get(
-        str(text_vars["kind_of_work_oid"])
-    )
+    text_vars["kind_of_work_short"] = kind_of_work_short_vars.get(str(text_vars["kind_of_work_oid"]))
 
     return text_format.format(**text_vars)
 

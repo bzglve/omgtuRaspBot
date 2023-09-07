@@ -1,11 +1,13 @@
 import itertools
 from datetime import date
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Literal, Optional
 
 import requests
 
 
-def get_groups(query: str = None) -> list[dict]:
+group_keys = Literal["id", "label", "description", "type"]
+Group = Dict[group_keys, str]
+def get_groups(query: Optional[str] = None) -> List[Group]:
     """Fetches a groups from the OmGTU API.
 
     Args:
@@ -23,7 +25,7 @@ def get_groups(query: str = None) -> list[dict]:
     Raises:
         requests.exceptions.RequestException: if a request exception occurred
         ValueError: if the status code of the response is not 200 or no groups are available
-    """
+    """  # noqa: E501
 
     params = {"type": "group", "term": query}
 
@@ -33,15 +35,80 @@ def get_groups(query: str = None) -> list[dict]:
     except requests.exceptions.RequestException as e:
         raise e
 
-    if groups := response.json():
+    if groups := list(response.json()):
         return groups
     else:
         raise ValueError("No groups available")
 
 
-def get_week_schedule(
-    group_id: int, start: date, finish: date
-) -> List[List[Dict[str, Any]]]:
+lesson_keys = Literal[
+    "auditorium",
+    "auditoriumAmount",
+    "auditoriumOid",
+    "author",
+    "beginLesson",
+    "building",
+    "buildingGid",
+    "buildingOid",
+    "contentOfLoadOid",
+    "contentOfLoadUID",
+    "contentTableOfLessonsName",
+    "contentTableOfLessonsOid",
+    "createddate",
+    "date",
+    "dateOfNest",
+    "dayOfWeek",
+    "dayOfWeekString",
+    "detailInfo",
+    "discipline",
+    "disciplineOid",
+    "disciplineinplan",
+    "disciplinetypeload",
+    "duration",
+    "endLesson",
+    "group",
+    "groupOid",
+    "groupUID",
+    "group_facultyoid",
+    "hideincapacity",
+    "isBan",
+    "kindOfWork",
+    "kindOfWorkComplexity",
+    "kindOfWorkOid",
+    "kindOfWorkUid",
+    "lecturer",
+    "lecturerCustomUID",
+    "lecturerEmail",
+    "lecturerOid",
+    "lecturerUID",
+    "lecturer_rank",
+    "lecturer_title",
+    "lessonNumberEnd",
+    "lessonNumberStart",
+    "lessonOid",
+    "listOfLecturers",
+    "modifieddate",
+    "note",
+    "note_description",
+    "parentschedule",
+    "replaces",
+    "stream",
+    "streamOid",
+    "stream_facultyoid",
+    "subGroup",
+    "subGroupOid",
+    "subgroup_facultyoid",
+    "tableofLessonsName",
+    "tableofLessonsOid",
+    "url1",
+    "url1_description",
+    "url2",
+    "url2_description",
+]
+Lesson = Dict[lesson_keys, Any]
+
+
+def get_week_schedule(group_id: int, start: date, finish: date) -> List[List[Lesson]]:
     """Fetches the schedule for a group from the OmGTU schedule API.
 
     Note:
@@ -53,71 +120,7 @@ def get_week_schedule(
         finish (date): The end date of the schedule.
 
     Returns:
-        List[List[Dict[str, Any]]]: A list of lists of dictionaries containing the schedule data.
-
-    The keys of each dictionary are as follows:
-        - auditorium
-        - auditoriumAmount
-        - auditoriumOid
-        - author
-        - beginLesson
-        - building
-        - buildingGid
-        - buildingOid
-        - contentOfLoadOid
-        - contentOfLoadUID
-        - contentTableOfLessonsName
-        - contentTableOfLessonsOid
-        - createddate
-        - date
-        - dateOfNest
-        - dayOfWeek
-        - dayOfWeekString
-        - detailInfo
-        - discipline
-        - disciplineOid
-        - disciplineinplan
-        - disciplinetypeload
-        - duration
-        - endLesson
-        - group
-        - groupOid
-        - groupUID
-        - group_facultyoid
-        - hideincapacity
-        - isBan
-        - kindOfWork
-        - kindOfWorkComplexity
-        - kindOfWorkOid
-        - kindOfWorkUid
-        - lecturer
-        - lecturerCustomUID
-        - lecturerEmail
-        - lecturerOid
-        - lecturerUID
-        - lecturer_rank
-        - lecturer_title
-        - lessonNumberEnd
-        - lessonNumberStart
-        - lessonOid
-        - listOfLecturers
-        - modifieddate
-        - note
-        - note_description
-        - parentschedule
-        - replaces
-        - stream
-        - streamOid
-        - stream_facultyoid
-        - subGroup
-        - subGroupOid
-        - subgroup_facultyoid
-        - tableofLessonsName
-        - tableofLessonsOid
-        - url1
-        - url1_description
-        - url2
-        - url2_description
+        List[List[Lesson]]: A list of lists of dictionaries containing the schedule data
 
     Raises:
         requests.exceptions.RequestException: If there is an error in the HTTP request.
@@ -132,22 +135,17 @@ def get_week_schedule(
     }
 
     try:
-        response = requests.get(
-            f"https://rasp.omgtu.ru/api/schedule/group/{group_id}", params=params
-        )
+        response = requests.get(f"https://rasp.omgtu.ru/api/schedule/group/{group_id}", params=params)
     except requests.exceptions.RequestException as e:
         raise e
 
     if schedule := response.json():
-        return [
-            list(day_schedule)
-            for _, day_schedule in itertools.groupby(schedule, key=lambda k: k["date"])
-        ]
+        return [list(day_schedule) for _, day_schedule in itertools.groupby(schedule, key=lambda k: k["date"])]
     else:
         raise ValueError("No schedule available")
 
 
-def get_day_schedule(group_id: int, schedule_date: date) -> list[dict]:
+def get_day_schedule(group_id: int, schedule_date: date) -> List[Lesson]:
     """Fetches the schedule for a group from the OmGTU schedule API.
 
     Args:
@@ -155,71 +153,7 @@ def get_day_schedule(group_id: int, schedule_date: date) -> list[dict]:
         schedule_date (date): The date of the schedule.
 
     Returns:
-        list(dict): A list of dictionaries containing the schedule data.
-
-    The keys of each dictionary are as follows:
-        - auditorium
-        - auditoriumAmount
-        - auditoriumOid
-        - author
-        - beginLesson
-        - building
-        - buildingGid
-        - buildingOid
-        - contentOfLoadOid
-        - contentOfLoadUID
-        - contentTableOfLessonsName
-        - contentTableOfLessonsOid
-        - createddate
-        - date
-        - dateOfNest
-        - dayOfWeek
-        - dayOfWeekString
-        - detailInfo
-        - discipline
-        - disciplineOid
-        - disciplineinplan
-        - disciplinetypeload
-        - duration
-        - endLesson
-        - group
-        - groupOid
-        - groupUID
-        - group_facultyoid
-        - hideincapacity
-        - isBan
-        - kindOfWork
-        - kindOfWorkComplexity
-        - kindOfWorkOid
-        - kindOfWorkUid
-        - lecturer
-        - lecturerCustomUID
-        - lecturerEmail
-        - lecturerOid
-        - lecturerUID
-        - lecturer_rank
-        - lecturer_title
-        - lessonNumberEnd
-        - lessonNumberStart
-        - lessonOid
-        - listOfLecturers
-        - modifieddate
-        - note
-        - note_description
-        - parentschedule
-        - replaces
-        - stream
-        - streamOid
-        - stream_facultyoid
-        - subGroup
-        - subGroupOid
-        - subgroup_facultyoid
-        - tableofLessonsName
-        - tableofLessonsOid
-        - url1
-        - url1_description
-        - url2
-        - url2_description
+        List[Lesson]: A list of dictionaries containing the schedule data.
 
     Raises:
         requests.exceptions.RequestException: If there is an error in the HTTP request.
