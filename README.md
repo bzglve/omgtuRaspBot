@@ -33,6 +33,7 @@ VAR1=1
 
 ### TODO
 
+- [ ] мигрировать проект с `pip` и [requirements.txt](./requirements.txt) на `poetry`
 - [x] Выбор группы
 - [ ] Выбор подгруппы
 - [x] Пары сегодня
