@@ -1,6 +1,6 @@
 aiogram==3.4.1
 aiogram-dialog==2.1.0
-aiosqlite==0.19.0
+aiosqlite==0.20.0
 alembic==1.13.1
 environs==10.3.0
 requests==2.31.0
