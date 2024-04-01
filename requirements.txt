@@ -4,4 +4,4 @@ aiosqlite==0.20.0
 alembic==1.13.1
 environs==10.3.0
 requests==2.31.0
-SQLAlchemy==2.0.27
+SQLAlchemy==2.0.29
