@@ -1,4 +1,4 @@
-aiogram==3.4.1
+aiogram==3.5.0
 aiogram-dialog==2.1.0
 aiosqlite==0.20.0
 alembic==1.13.1
